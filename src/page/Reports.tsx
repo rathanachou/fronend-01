@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart, Bar,
   XAxis, YAxis,
@@ -16,19 +17,43 @@ import type {
   IDailySales,
   IOrderWithDetails,
 } from "@/types/dashboard";
+import {
+  TrendingUp,
+  ShoppingBag,
+  Receipt,
+  DollarSign,
+  Tag,
+  CheckCircle,
+  CalendarDays,
+  Trophy,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+} from "lucide-react";
+
+type Tab = "daily" | "monthly" | "top-products";
+
+function getTabFromPath(pathname: string): Tab {
+  if (pathname.includes("/daily"))   return "daily";
+  if (pathname.includes("/monthly")) return "monthly";
+  return "top-products";
+}
 
 export default function Reports() {
-  const [monthlySales, setMonthlySales] = useState<any[]>([]);
-  const [topProducts, setTopProducts] = useState<any[]>([]);
-  const [dailySales, setDailySales] = useState<IDailySales | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(
+  const location  = useLocation();
+  const navigate  = useNavigate();
+  const activeTab = getTabFromPath(location.pathname);
+
+  const [monthlySales,  setMonthlySales]  = useState<any[]>([]);
+  const [topProducts,   setTopProducts]   = useState<any[]>([]);
+  const [dailySales,    setDailySales]    = useState<IDailySales | null>(null);
+  const [selectedDate,  setSelectedDate]  = useState<string>(
     new Date().toISOString().split("T")[0]
   );
-  const [loading, setLoading] = useState(false);
-  const [dailyLoading, setDailyLoading] = useState(false);
+  const [loading,       setLoading]       = useState(false);
+  const [dailyLoading,  setDailyLoading]  = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
 
-  // Fetch monthly & top products once
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -38,7 +63,7 @@ export default function Reports() {
           getTopProducts(10),
         ]);
         setMonthlySales((monthly as any)?.data || []);
-        setTopProducts((top as any)?.data || []);
+        setTopProducts((top   as any)?.data || []);
       } catch (error) {
         console.error("Reports error:", error);
       } finally {
@@ -48,13 +73,12 @@ export default function Reports() {
     fetchData();
   }, []);
 
-  // Fetch daily sales whenever date changes
   useEffect(() => {
     const fetchDaily = async () => {
       setDailyLoading(true);
       try {
         const res = await getDailySales(selectedDate);
-        setDailySales((res as any)?.data ?? res);
+        setDailySales(res as any);
       } catch (error) {
         console.error("Daily sales error:", error);
         setDailySales(null);
@@ -65,10 +89,25 @@ export default function Reports() {
     fetchDaily();
   }, [selectedDate]);
 
+  const TAB_ROUTES: Record<Tab, string> = {
+    "daily":        "/admin/reports/daily",
+    "monthly":      "/admin/reports/monthly",
+    "top-products": "/admin/reports",
+  };
+
+  const TABS: { key: Tab; label: string }[] = [
+    { key: "daily",        label: "Daily Report"  },
+    { key: "monthly",      label: "Monthly Sales" },
+    { key: "top-products", label: "Top Products"  },
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-500">⏳ Loading Reports...</p>
+        <div className="flex items-center gap-2 text-gray-500">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <p className="text-sm">Loading Reports...</p>
+        </div>
       </div>
     );
   }
@@ -78,195 +117,170 @@ export default function Reports() {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">📈 Sales Reports</h1>
 
-      {/* ── Daily Report ── */}
-      <div className="bg-white rounded-xl shadow p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h2 className="text-lg font-semibold">📅 Daily Report</h2>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          />
-        </div>
+      {/* Page Title */}
+      <div className="flex items-center gap-2">
+        <TrendingUp className="h-6 w-6 text-indigo-600" />
+        <h1 className="text-2xl font-bold">Sales Reports</h1>
+      </div>
 
-        {dailyLoading ? (
-          <p className="text-gray-400 text-sm">⏳ Loading daily data...</p>
-        ) : !dailySales ? (
-          <p className="text-gray-400 text-sm">No data for this date.</p>
-        ) : (
-          <>
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <SummaryCard
-                label="Total Orders"
-                value={String(summary?.totalOrders ?? 0)}
-                icon="🧾"
-                color="bg-indigo-50 text-indigo-700"
-              />
-              <SummaryCard
-                label="Total Sales"
-                value={`$${Number(summary?.totalSales ?? 0).toFixed(2)}`}
-                icon="💰"
-                color="bg-green-50 text-green-700"
-              />
-              <SummaryCard
-                label="Discount"
-                value={`$${Number(summary?.totalDiscount ?? 0).toFixed(2)}`}
-                icon="🏷️"
-                color="bg-yellow-50 text-yellow-700"
-              />
-              <SummaryCard
-                label="Net Sales"
-                value={`$${Number(summary?.netSales ?? 0).toFixed(2)}`}
-                icon="✅"
-                color="bg-blue-50 text-blue-700"
-              />
+      {/* Tab Bar */}
+      <div className="flex gap-2 border-b border-gray-200">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => navigate(TAB_ROUTES[tab.key])}
+            className="px-4 py-2 text-sm font-medium transition-colors"
+            style={{
+              borderBottom: activeTab === tab.key
+                ? "2px solid #6366f1"
+                : "2px solid transparent",
+              color: activeTab === tab.key ? "#6366f1" : "#6b7280",
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── DAILY TAB ── */}
+      {activeTab === "daily" && (
+        <div className="bg-white rounded-xl shadow p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-indigo-500" />
+              <h2 className="text-lg font-semibold">Daily Report</h2>
             </div>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
 
-            {/* Orders Table */}
-            {orders.length === 0 ? (
-              <p className="text-gray-400 text-sm">No orders found.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 text-gray-600 text-left">
-                      <th className="px-4 py-2 font-medium">#</th>
-                      <th className="px-4 py-2 font-medium">Order No.</th>
-                      <th className="px-4 py-2 font-medium">Total</th>
-                      <th className="px-4 py-2 font-medium">Discount</th>
-                      <th className="px-4 py-2 font-medium">Date</th>
-                      <th className="px-4 py-2 font-medium">Details</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((order, idx) => (
-                      <>
-                        <tr
-                          key={order.id}
-                          className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-4 py-2 text-gray-400">{idx + 1}</td>
-                          <td className="px-4 py-2 font-medium text-gray-700">
-                            {order.orderNumber}
-                          </td>
-                          <td className="px-4 py-2 text-green-600 font-semibold">
-                            ${Number(order.total).toFixed(2)}
-                          </td>
-                          <td className="px-4 py-2 text-yellow-600">
-                            ${Number(order.discount).toFixed(2)}
-                          </td>
-                          <td className="px-4 py-2 text-gray-500">
-                            {new Date(order.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </td>
-                          <td className="px-4 py-2">
-                            <button
-                              onClick={() =>
-                                setExpandedOrder(
-                                  expandedOrder === order.id ? null : order.id
-                                )
-                              }
-                              className="text-indigo-500 hover:text-indigo-700 text-xs underline"
-                            >
-                              {expandedOrder === order.id ? "Hide" : "View"}
-                            </button>
-                          </td>
-                        </tr>
+          {dailyLoading ? (
+            <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading daily data...</span>
+            </div>
+          ) : !dailySales ? (
+            <p className="text-gray-400 text-sm">No data for this date.</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <SummaryCard label="Total Orders"  value={String(summary?.totalOrders ?? 0)}                          icon={<Receipt     className="h-5 w-5" />} color="bg-indigo-50 text-indigo-700" />
+                <SummaryCard label="Total Sales"   value={`$${Number(summary?.totalSales    ?? 0).toFixed(2)}`}       icon={<DollarSign  className="h-5 w-5" />} color="bg-green-50 text-green-700"   />
+                <SummaryCard label="Discount"      value={`$${Number(summary?.totalDiscount ?? 0).toFixed(2)}`}       icon={<Tag         className="h-5 w-5" />} color="bg-yellow-50 text-yellow-700" />
+                <SummaryCard label="Net Sales"     value={`$${Number(summary?.netSales      ?? 0).toFixed(2)}`}       icon={<CheckCircle className="h-5 w-5" />} color="bg-blue-50 text-blue-700"     />
+              </div>
 
-                        {/* Expanded order detail rows */}
-                        {expandedOrder === order.id &&
-                          order.orderDetails.map((item) => (
-                            <tr
-                              key={item.id}
-                              className="bg-indigo-50 text-xs text-gray-600"
-                            >
-                              <td />
-                              <td
-                                className="px-6 py-1.5 italic text-gray-500"
-                                colSpan={1}
+              {orders.length === 0 ? (
+                <p className="text-gray-400 text-sm">No orders found.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-gray-600 text-left">
+                        {["#", "Order No.", "Total", "Discount", "Date", "Details"].map((h) => (
+                          <th key={h} className="px-4 py-2 font-medium">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((order, idx) => (
+                        <>
+                          <tr key={order.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                            <td className="px-4 py-2 text-gray-400">{idx + 1}</td>
+                            <td className="px-4 py-2 font-medium text-gray-700">{order.orderNumber}</td>
+                            <td className="px-4 py-2 text-green-600 font-semibold">${Number(order.total).toFixed(2)}</td>
+                            <td className="px-4 py-2 text-yellow-600">${Number(order.discount).toFixed(2)}</td>
+                            <td className="px-4 py-2 text-gray-500">
+                              {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </td>
+                            <td className="px-4 py-2">
+                              <button
+                                onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                                className="flex items-center gap-1 text-indigo-500 hover:text-indigo-700 text-xs"
                               >
-                                ↳ {item.productName}
-                              </td>
-                              <td className="px-4 py-1.5">
-                                ${Number(item.productPrice).toFixed(2)} × {item.qty}
-                              </td>
-                              <td className="px-4 py-1.5 text-green-600 font-medium">
-                                ${Number(item.amount).toFixed(2)}
-                              </td>
+                                {expandedOrder === order.id
+                                  ? <><ChevronUp   className="h-3.5 w-3.5" />Hide</>
+                                  : <><ChevronDown className="h-3.5 w-3.5" />View</>}
+                              </button>
+                            </td>
+                          </tr>
+                          {expandedOrder === order.id && order.orderDetails.map((item) => (
+                            <tr key={item.id} className="bg-indigo-50 text-xs text-gray-600">
+                              <td />
+                              <td className="px-6 py-1.5 italic text-gray-500" colSpan={1}>↳ {item.productName}</td>
+                              <td className="px-4 py-1.5">${Number(item.productPrice).toFixed(2)} × {item.qty}</td>
+                              <td className="px-4 py-1.5 text-green-600 font-medium">${Number(item.amount).toFixed(2)}</td>
                               <td colSpan={2} />
                             </tr>
                           ))}
-                      </>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
-      {/* ── Monthly Sales ── */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">📆 Monthly Sales</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={monthlySales}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip
-              formatter={(value) => [
-                `$${Number(value ?? 0).toFixed(2)}`,
-                "Sales",
-              ]}
-            />
-            <Legend />
-            <Bar dataKey="totalSales" fill="#6366f1" name="Sales ($)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="totalOrders" fill="#22c55e" name="Orders" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {/* ── MONTHLY TAB ── */}
+      {activeTab === "monthly" && (
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ShoppingBag className="h-5 w-5 text-indigo-500" />
+            <h2 className="text-lg font-semibold">Monthly Sales</h2>
+          </div>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={monthlySales}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={(value) => [`$${Number(value ?? 0).toFixed(2)}`, "Sales"]} />
+              <Legend />
+              <Bar dataKey="totalSales"  fill="#6366f1" name="Sales ($)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="totalOrders" fill="#22c55e" name="Orders"    radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
-      {/* ── Top Products ── */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <h2 className="text-lg font-semibold mb-4">🏆 Top Products</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={topProducts}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="productName" />
-            <YAxis />
-            <Tooltip formatter={(value) => [Number(value ?? 0), "Qty"]} />
-            <Legend />
-            <Bar dataKey="totalQty" fill="#f59e0b" name="Qty Sold" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="totalAmount" fill="#3b82f6" name="Revenue ($)" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {/* ── TOP PRODUCTS TAB ── */}
+      {activeTab === "top-products" && (
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy className="h-5 w-5 text-yellow-500" />
+            <h2 className="text-lg font-semibold">Top Products</h2>
+          </div>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={topProducts}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="productName" />
+              <YAxis />
+              <Tooltip formatter={(value) => [Number(value ?? 0), "Qty"]} />
+              <Legend />
+              <Bar dataKey="totalQty"    fill="#f59e0b" name="Qty Sold"    radius={[4, 4, 0, 0]} />
+              <Bar dataKey="totalAmount" fill="#3b82f6" name="Revenue ($)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
     </div>
   );
 }
 
-// Small reusable summary card
-function SummaryCard({
-  label,
-  value,
-  icon,
-  color,
-}: {
-  label: string;
-  value: string;
-  icon: string;
-  color: string;
+function SummaryCard({ label, value, icon, color }: {
+  label: string; value: string; icon: React.ReactNode; color: string;
 }) {
   return (
     <div className={`rounded-lg p-4 ${color} flex flex-col gap-1`}>
-      <span className="text-xl">{icon}</span>
+      {icon}
       <p className="text-xs font-medium opacity-70">{label}</p>
       <p className="text-lg font-bold">{value}</p>
     </div>

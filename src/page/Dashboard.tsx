@@ -1,35 +1,20 @@
 import { useState, useEffect } from "react";
 import { useDashboard } from "@/hooks/useDashboard";
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
+  AreaChart, Area,
+  BarChart, Bar,
+  PieChart, Pie, Cell,
+  XAxis, YAxis,
+  CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
 import {
-  DollarSign,
-  ShoppingCart,
-  TrendingUp,
-  Package,
-  AlertTriangle,
-  RefreshCw,
-  Calendar,
-  BarChart3,
-  Activity,
-  Sun,
-  Moon,
+  ShoppingCart, Package, BarChart3,
+  Search, Bell, ChevronDown, TrendingUp, TrendingDown,
+  Sun, Moon, RefreshCw, AlertTriangle, Store,
 } from "lucide-react";
 
-// ── Dark / Light mode hook ─────────────────────────────────
+// ─── Dark / Light hook ────────────────────────────────────────
 function useDarkMode() {
   const [dark, setDark] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
@@ -37,111 +22,75 @@ function useDarkMode() {
     if (stored) return stored === "dark";
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
-
   useEffect(() => {
     localStorage.setItem("dashboard-theme", dark ? "dark" : "light");
-    if (dark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
   }, [dark]);
-
-  return { dark, toggle: () => setDark((d) => !d) };
+  return { dark, toggle: () => setDark(d => !d) };
 }
 
-// ── Theme tokens ───────────────────────────────────────────
-// Light = Arctic Blue  |  Dark = Midnight Indigo
+// ─── Theme tokens ─────────────────────────────────────────────
 function useTheme(dark: boolean) {
   return {
-    // backgrounds
-    pageBg:    dark ? "#0f1117"  : "#f0f4ff",
-    cardBg:    dark ? "#1a1d2e"  : "#ffffff",
-    cardBorder:dark ? "#252840"  : "#dbeafe",
-    hoverBg:   dark ? "#252840"  : "#eff6ff",
-
-    // text
-    textPrimary:   dark ? "#f1f5f9"  : "#0f172a",
-    textSecondary: dark ? "#94a3b8"  : "#374151",
-    textMuted:     dark ? "#475569"  : "#6b7280",
-
-    // chart internals
-    gridColor: dark ? "rgba(255,255,255,0.05)" : "rgba(59,130,246,0.08)",
-    tickColor: dark ? "#475569" : "#9ca3af",
-    tooltipBg: dark ? "#1e2235" : "#ffffff",
-    tooltipBorder: dark ? "#2d3148" : "#dbeafe",
-    tooltipText: dark ? "#e2e8f0" : "#0f172a",
-    tooltipMuted: dark ? "#94a3b8" : "#6b7280",
-    axisLine:  dark ? "rgba(255,255,255,0.08)" : "rgba(59,130,246,0.15)",
-
-    // low stock card
-    stockBg:     dark ? "#1a1520" : "#fff5f5",
-    stockBorder: dark ? "rgba(153,27,27,0.4)" : "#fecaca",
-    stockRow:    dark ? "#1e1520" : "#fff1f1",
-
-    // refresh btn
-    btnBg:     dark ? "#1a1d2e" : "#eff6ff",
-    btnBorder: dark ? "#252840" : "#bfdbfe",
-    btnText:   dark ? "#94a3b8" : "#3b82f6",
-    btnHover:  dark ? "#252840" : "#dbeafe",
-
-    // toggle btn
-    toggleBg:     dark ? "#252840" : "#dbeafe",
-    toggleText:   dark ? "#fbbf24" : "#3b82f6",
+    navBg:          dark ? "#161b27" : "#ffffff",
+    navBorder:      dark ? "#1e2435" : "#e5e7eb",
+    pageBg:         dark ? "#0f1623" : "#f3f4f8",
+    cardBg:         dark ? "#161b27" : "#ffffff",
+    cardBorder:     dark ? "#1e2435" : "#e5e7eb",
+    cardShadow:     dark ? "none"    : "0 1px 4px rgba(0,0,0,0.06)",
+    textPrimary:    dark ? "#f1f5f9" : "#111827",
+    textSecondary:  dark ? "#94a3b8" : "#6b7280",
+    textMuted:      dark ? "#4b5563" : "#9ca3af",
+    gridColor:      dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.05)",
+    tickColor:      dark ? "#374151" : "#9ca3af",
+    tooltipBg:      dark ? "#1e2435" : "#ffffff",
+    tooltipBorder:  dark ? "#2d3748" : "#e5e7eb",
+    tooltipText:    dark ? "#f1f5f9" : "#111827",
+    tableBorder:    dark ? "#1e2435" : "#f3f4f6",
+    badgeGreen:     dark ? "rgba(34,197,94,0.15)"  : "rgba(34,197,94,0.1)",
+    badgeGreenText: "#22c55e",
+    badgeRed:       dark ? "rgba(239,68,68,0.15)"  : "rgba(239,68,68,0.1)",
+    badgeRedText:   "#ef4444",
+    btnBg:          dark ? "#1e2435" : "#f3f4f8",
+    btnBorder:      dark ? "#2d3748" : "#e5e7eb",
+    btnText:        dark ? "#94a3b8" : "#6b7280",
   };
 }
 
-// ── Chart color palette — Arctic Blue ─────────────────────
-const CHART_COLORS = ["#3b82f6", "#06b6d4", "#8b5cf6", "#f59e0b", "#10b981"];
+const PIE_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#f43f5e"];
+const BAR_COLORS = ["#3b82f6", "#22c55e", "#8b5cf6", "#f59e0b", "#f43f5e"];
 
-// ── Custom Tooltip ─────────────────────────────────────────
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-  dark,
-}: {
-  active?: boolean;
-  payload?: any[];
-  label?: string;
-  dark: boolean;
-}) => {
-  const t = useTheme(dark);
+// ─── Custom Tooltip ───────────────────────────────────────────
+const ChartTooltip = ({ active, payload, label, t }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div
-      style={{
-        background: t.tooltipBg,
-        border: `1px solid ${t.tooltipBorder}`,
-        borderRadius: 10,
-        padding: "10px 14px",
-        fontSize: 12,
-        color: t.tooltipText,
-        boxShadow: dark ? "none" : "0 4px 24px rgba(0,0,0,0.08)",
-      }}
-    >
-      <p style={{ marginBottom: 6, color: t.tooltipMuted, fontWeight: 600 }}>
-        {label}
-      </p>
+    <div style={{
+      background: t.tooltipBg, border: `1px solid ${t.tooltipBorder}`,
+      borderRadius: 8, padding: "8px 12px", fontSize: 12, color: t.tooltipText,
+      boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+    }}>
+      {label && <p style={{ color: t.textSecondary, marginBottom: 4, fontWeight: 600 }}>{label}</p>}
       {payload.map((p: any) => (
-        <p key={p.name} style={{ color: p.color, margin: "2px 0" }}>
-          {p.name}:{" "}
-          <span style={{ fontWeight: 700 }}>
-            {p.name.toLowerCase().includes("sales") ||
-            p.name.toLowerCase().includes("revenue")
-              ? `$${Number(p.value ?? 0).toFixed(2)}`
-              : Number(p.value ?? 0)}
-          </span>
+        <p key={p.name} style={{ color: p.color ?? t.textPrimary, margin: "1px 0" }}>
+          {p.name}: <strong>{typeof p.value === "number" && p.dataKey !== "totalQty"
+            ? `$${Number(p.value).toLocaleString()}`
+            : p.value}</strong>
         </p>
       ))}
     </div>
   );
 };
 
-// ── Dashboard ──────────────────────────────────────────────
+const Empty = ({ label, t }: { label: string; t: any }) => (
+  <div className="flex items-center justify-center h-full">
+    <p className="text-xs" style={{ color: t.textMuted }}>{label}</p>
+  </div>
+);
+
+// ─── Dashboard ────────────────────────────────────────────────
 export default function Dashboard() {
   const { dark, toggle } = useDarkMode();
   const t = useTheme(dark);
+  const [period, setPeriod] = useState<"Today"|"Week"|"Month"|"Year">("Week");
 
   const {
     summary,
@@ -149,533 +98,403 @@ export default function Dashboard() {
     topProducts,
     categoryData,
     dailySales,
+    totalProducts,
+    lowStock,
     loading,
     error,
     refetch,
   } = useDashboard();
 
-  const axisProps = {
-    tick: { fill: t.tickColor, fontSize: 11 },
-    axisLine: { stroke: t.axisLine },
-    tickLine: false as const,
+  // ── Monthly target ───────────────────────────────────────────
+  const MONTHLY_TARGET = 5000;
+  const monthlyActual  = summary?.monthly?.totalSales ?? 0;
+  const targetPct      = Math.min(100, Math.round((monthlyActual / MONTHLY_TARGET) * 100));
+
+  // ── Format date/time from Order.createdAt ───────────────────
+  const fmtTime = (iso: string) => {
+    try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+    catch { return "—"; }
   };
 
-  const gridProps = {
-    strokeDasharray: "3 3",
-    stroke: t.gridColor,
-    vertical: false,
-  };
-
-  if (loading) {
-    return (
-      <div
-        className="flex items-center justify-center h-screen"
-        style={{ background: t.pageBg }}
-      >
-        <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="h-8 w-8 animate-spin" style={{ color: "#3b82f6" }} />
-          <p
-            className="text-sm tracking-widest uppercase"
-            style={{ color: t.textMuted }}
-          >
-            Loading Dashboard…
-          </p>
-        </div>
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen" style={{ background: t.pageBg }}>
+      <div className="flex flex-col items-center gap-3">
+        <RefreshCw className="h-7 w-7 animate-spin" style={{ color: "#3b82f6" }} />
+        <p className="text-sm tracking-widest uppercase" style={{ color: t.textMuted }}>Loading…</p>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div
-        className="flex flex-col items-center justify-center h-screen gap-4"
-        style={{ background: t.pageBg }}
-      >
-        <div className="p-4 rounded-full bg-red-500/10">
-          <AlertTriangle className="h-10 w-10 text-red-400" />
-        </div>
-        <p className="text-red-400 text-sm">{error}</p>
-        <button
-          onClick={refetch}
-          className="flex items-center gap-2 text-white px-5 py-2 rounded-xl text-sm transition-colors"
-          style={{ background: "#3b82f6" }}
-        >
-          <RefreshCw className="h-4 w-4" />
-          Try Again
-        </button>
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-screen gap-4" style={{ background: t.pageBg }}>
+      <AlertTriangle className="h-10 w-10 text-red-400" />
+      <p className="text-red-400 text-sm">{error}</p>
+      <button onClick={refetch} className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm" style={{ background: "#3b82f6" }}>
+        <RefreshCw className="h-4 w-4" /> Try Again
+      </button>
+    </div>
+  );
 
   return (
-    <div
-      className="min-h-screen p-6 space-y-5 transition-colors duration-300"
-      style={{ background: t.pageBg, color: t.textPrimary }}
-    >
-      {/* ── Header ─────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg" style={{ background: "#3b82f6", boxShadow: "0 4px 14px rgba(59,130,246,0.35)" }}>
-            <BarChart3 className="h-5 w-5 text-white" />
-          </div>
+    <div className="flex h-screen overflow-hidden" style={{ background: t.pageBg, fontFamily: "'Inter','Segoe UI',sans-serif" }}>
+      <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* ── TOP NAVBAR ─────────────────────────────────── */}
+        <header className="flex items-center justify-between px-6 py-3 flex-shrink-0 border-b"
+          style={{ background: t.navBg, borderColor: t.navBorder }}>
           <div>
-            <h1
-              className="text-base font-semibold tracking-wide"
-              style={{ color: t.textPrimary }}
-            >
-              LAVARSTORE
-            </h1>
-            <p className="text-xs" style={{ color: t.textMuted }}>
-              Sales Dashboard · Live
-            </p>
+            <h1 className="text-lg font-bold" style={{ color: t.textPrimary }}>Dashboard</h1>
+            <p className="text-xs" style={{ color: t.textSecondary }}>Overview of your store performance</p>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* ── Dark / Light toggle ── */}
-          <button
-            onClick={toggle}
-            aria-label="Toggle dark mode"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200"
-            style={{
-              background: t.toggleBg,
-              color: t.toggleText,
-              border: `1px solid ${t.cardBorder}`,
-            }}
-          >
-            {dark ? (
-              <>
-                <Sun className="h-3.5 w-3.5" />
-                Light
-              </>
-            ) : (
-              <>
-                <Moon className="h-3.5 w-3.5" />
-                Dark
-              </>
-            )}
-          </button>
-
-          {/* ── Refresh ── */}
-          <button
-            onClick={refetch}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all duration-200"
-            style={{
-              background: t.btnBg,
-              border: `1px solid ${t.btnBorder}`,
-              color: t.btnText,
-            }}
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      {/* ── Summary Cards ──────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard
-          label="Today Sales"
-          value={`$${Number(summary?.today?.totalSales ?? 0).toFixed(2)}`}
-          sub={`${summary?.today?.totalOrders ?? 0} orders`}
-          icon={<DollarSign className="h-4 w-4" />}
-          accent="#3b82f6"
-          t={t}
-        />
-        <MetricCard
-          label="Weekly Sales"
-          value={`$${Number(summary?.weekly?.totalSales ?? 0).toFixed(2)}`}
-          sub={`${summary?.weekly?.totalOrders ?? 0} orders`}
-          icon={<TrendingUp className="h-4 w-4" />}
-          accent="#06b6d4"
-          t={t}
-        />
-        <MetricCard
-          label="Monthly Sales"
-          value={`$${Number(summary?.monthly?.totalSales ?? 0).toFixed(2)}`}
-          sub={`${summary?.monthly?.totalOrders ?? 0} orders`}
-          icon={<Calendar className="h-4 w-4" />}
-          accent="#f59e0b"
-          t={t}
-        />
-        <MetricCard
-          label="Products"
-          value={summary?.totalProducts ?? 0}
-          sub={`${summary?.totalCustomers ?? 0} customers`}
-          icon={<Package className="h-4 w-4" />}
-          accent="#8b5cf6"
-          t={t}
-        />
-      </div>
-
-      {/* ── Daily Sales Strip ───────────────────────── */}
-      {dailySales?.summary && (
-        <div
-          className="rounded-2xl p-4 transition-colors duration-300"
-          style={{ background: t.cardBg, border: `1px solid ${t.cardBorder}` }}
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <Activity className="h-4 w-4" style={{ color: "#3b82f6" }} />
-            <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#3b82f6" }}>
-              Today's Detail — {dailySales.date}
-            </h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <DailyStat
-              label="Total Orders"
-              value={String(dailySales.summary.totalOrders)}
-              icon={<ShoppingCart className="h-4 w-4" />}
-              color="#3b82f6"
-              bg="rgba(59,130,246,0.08)"
-            />
-            <DailyStat
-              label="Total Sales"
-              value={`$${Number(dailySales.summary.totalSales).toFixed(2)}`}
-              icon={<DollarSign className="h-4 w-4" />}
-              color="#06b6d4"
-              bg="rgba(6,182,212,0.08)"
-            />
-            <DailyStat
-              label="Discount"
-              value={`-$${Number(dailySales.summary.totalDiscount).toFixed(2)}`}
-              icon={<TrendingUp className="h-4 w-4" />}
-              color="#f59e0b"
-              bg="rgba(245,158,11,0.08)"
-            />
-            <DailyStat
-              label="Net Sales"
-              value={`$${Number(dailySales.summary.netSales).toFixed(2)}`}
-              icon={<BarChart3 className="h-4 w-4" />}
-              color="#8b5cf6"
-              bg="rgba(139,92,246,0.08)"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ── Monthly Sales Line Chart ─────────────────── */}
-      <ChartCard
-        title="Monthly Sales"
-        icon={<TrendingUp className="h-4 w-4" style={{ color: "#3b82f6" }} />}
-        t={t}
-      >
-        <ResponsiveContainer width="100%" height={260}>
-          <LineChart
-            data={monthlySales}
-            margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
-          >
-            <CartesianGrid {...gridProps} />
-            <XAxis dataKey="month" {...axisProps} />
-            <YAxis
-              {...axisProps}
-              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-            />
-            <Tooltip content={<CustomTooltip dark={dark} />} />
-            <Legend
-              wrapperStyle={{ fontSize: 11, color: t.tickColor, paddingTop: 8 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="totalSales"
-              stroke="#3b82f6"
-              strokeWidth={2.5}
-              dot={{ r: 3, fill: "#3b82f6", strokeWidth: 0 }}
-              activeDot={{ r: 5 }}
-              name="Total Sales"
-            />
-            <Line
-              type="monotone"
-              dataKey="totalOrders"
-              stroke="#06b6d4"
-              strokeWidth={2}
-              strokeDasharray="5 3"
-              dot={{ r: 3, fill: "#06b6d4", strokeWidth: 0 }}
-              activeDot={{ r: 5 }}
-              name="Total Orders"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartCard>
-
-      {/* ── Bottom Charts ──────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Top Products horizontal bar */}
-        <ChartCard
-          title="Top Products"
-          icon={<Package className="h-4 w-4" style={{ color: "#f59e0b" }} />}
-          t={t}
-        >
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart
-              data={topProducts}
-              layout="vertical"
-              margin={{ top: 0, right: 12, bottom: 0, left: 0 }}
-            >
-              <CartesianGrid
-                {...gridProps}
-                horizontal={false}
-                vertical={true}
-              />
-              <XAxis type="number" {...axisProps} />
-              <YAxis
-                type="category"
-                dataKey="productName"
-                width={90}
-                tick={{ fill: t.tickColor, fontSize: 10 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip content={<CustomTooltip dark={dark} />} />
-              <Legend
-                wrapperStyle={{ fontSize: 11, color: t.tickColor, paddingTop: 8 }}
-              />
-              <Bar
-                dataKey="totalQty"
-                fill="#06b6d4"
-                name="Qty Sold"
-                radius={[0, 5, 5, 0]}
-              />
-              <Bar
-                dataKey="totalAmount"
-                fill="#3b82f6"
-                name="Revenue ($)"
-                radius={[0, 5, 5, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        {/* Category donut */}
-        <ChartCard
-          title="Revenue by Category"
-          icon={<BarChart3 className="h-4 w-4" style={{ color: "#8b5cf6" }} />}
-          t={t}
-        >
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                dataKey="totalSales"
-                nameKey="category"
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={95}
-                paddingAngle={3}
-                label={({ percent }) =>
-                  percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ""
-                }
-                labelLine={{ stroke: t.tickColor, strokeWidth: 1 }}
-              >
-                {categoryData?.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={CHART_COLORS[index % CHART_COLORS.length]}
-                    stroke="transparent"
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: t.tooltipBg,
-                  border: `1px solid ${t.tooltipBorder}`,
-                  borderRadius: 10,
-                  color: t.tooltipText,
-                  fontSize: 12,
-                }}
-                formatter={(value) => [
-                  `$${Number(value ?? 0).toFixed(2)}`,
-                  "Revenue",
-                ]}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: 11, color: t.tickColor, paddingTop: 8 }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-
-      {/* ── Low Stock Alert ───────────────────────────── */}
-      {(summary?.lowStock?.length ?? 0) > 0 && (
-        <div
-          className="rounded-2xl p-5 transition-colors duration-300"
-          style={{
-            background: t.stockBg,
-            border: `1px solid ${t.stockBorder}`,
-          }}
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="h-4 w-4 text-red-400" />
-            <h2 className="text-xs font-semibold text-red-400 uppercase tracking-widest">
-              Low Stock Alert
-            </h2>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${t.stockBorder}` }}>
-                <th
-                  className="pb-2 text-left text-[10px] uppercase tracking-widest font-semibold"
-                  style={{ color: t.textMuted }}
-                >
-                  Product
-                </th>
-                <th
-                  className="pb-2 text-center text-[10px] uppercase tracking-widest font-semibold"
-                  style={{ color: t.textMuted }}
-                >
-                  Qty Left
-                </th>
-                <th
-                  className="pb-2 text-right text-[10px] uppercase tracking-widest font-semibold"
-                  style={{ color: t.textMuted }}
-                >
-                  Price
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {summary?.lowStock?.map((product) => (
-                <tr
-                  key={product.id}
-                  className="transition-colors"
-                  style={{ borderBottom: `1px solid ${t.stockRow}` }}
-                >
-                  <td
-                    className="py-3 flex items-center gap-2"
-                    style={{ color: t.textSecondary }}
-                  >
-                    <Package className="h-4 w-4" style={{ color: t.textMuted }} />
-                    {product.name}
-                  </td>
-                  <td className="py-3 text-center">
-                    <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                      {product.qty} left
-                    </span>
-                  </td>
-                  <td
-                    className="py-3 text-right font-semibold"
-                    style={{ color: t.textSecondary }}
-                  >
-                    ${Number(product.price).toFixed(2)}
-                  </td>
-                </tr>
+          <div className="flex items-center gap-3">
+            {/* Period */}
+            <div className="flex items-center gap-1 rounded-lg p-1" style={{ background: t.btnBg, border: `1px solid ${t.btnBorder}` }}>
+              {(["Today","Week","Month","Year"] as const).map(p => (
+                <button key={p} onClick={() => setPeriod(p)}
+                  className="px-3 py-1 rounded-md text-xs font-medium transition-all"
+                  style={{ background: period === p ? "#3b82f6" : "transparent", color: period === p ? "#fff" : t.textSecondary }}>
+                  {p}
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+            {/* Search */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs"
+              style={{ background: t.btnBg, border: `1px solid ${t.btnBorder}`, color: t.textMuted }}>
+              <Search className="h-3.5 w-3.5" /><span>Search...</span>
+            </div>
+            {/* Bell */}
+            <button className="relative p-2 rounded-lg" style={{ background: t.btnBg, border: `1px solid ${t.btnBorder}` }}>
+              <Bell className="h-4 w-4" style={{ color: t.textSecondary }} />
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-bold">
+                {lowStock.length > 0 ? lowStock.length : ""}
+              </span>
+            </button>
+            {/* Branch */}
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ background: t.btnBg, border: `1px solid ${t.btnBorder}`, color: t.textSecondary }}>
+              <Store className="h-3.5 w-3.5" />Main Branch<ChevronDown className="h-3 w-3" />
+            </button>
+            {/* Theme toggle */}
+            <button onClick={toggle} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ background: t.btnBg, border: `1px solid ${t.btnBorder}`, color: t.btnText }}>
+              {dark ? <Sun className="h-3.5 w-3.5 text-yellow-400" /> : <Moon className="h-3.5 w-3.5 text-blue-500" />}
+              {dark ? "Light" : "Dark"}
+            </button>
+          </div>
+        </header>
+
+        {/* ── SCROLLABLE CONTENT ───────────────────────── */}
+        <main className="flex-1 overflow-y-auto p-5 space-y-4">
+
+          {/* ── METRIC CARDS ─────────────────────────── */}
+          {/*
+            Backend fields used:
+              summary.today.totalSales   → Today's Sales
+              summary.today.totalOrders  → Today's Orders
+              totalProducts              → summary.totalProducts
+              summary.monthly.totalSales → Monthly Sales
+          */}
+          <div className="grid grid-cols-4 gap-4">
+            <MetricCard
+              label="Today's Sales"
+              value={`$${Number(summary?.today?.totalSales ?? 0).toFixed(2)}`}
+              sub={`${summary?.today?.totalOrders ?? 0} orders today`}
+              accent="#3b82f6"
+              t={t}
+              icon={<div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(59,130,246,0.2)" }}>
+                <span style={{ color: "#3b82f6", fontWeight: 700, fontSize: 16 }}>$</span>
+              </div>}
+            />
+            <MetricCard
+              label="Total Orders Today"
+              value={String(summary?.today?.totalOrders ?? 0)}
+              sub={`$${Number(summary?.today?.totalSales ?? 0).toFixed(2)} revenue`}
+              accent="#22c55e"
+              t={t}
+              icon={<div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(34,197,94,0.2)" }}>
+                <ShoppingCart className="h-5 w-5" style={{ color: "#22c55e" }} />
+              </div>}
+            />
+            <MetricCard
+              label="Total Products"
+              value={String(totalProducts)}
+              sub={`${lowStock.length} items low stock`}
+              accent="#8b5cf6"
+              t={t}
+              icon={<div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(139,92,246,0.2)" }}>
+                <Package className="h-5 w-5" style={{ color: "#8b5cf6" }} />
+              </div>}
+            />
+            <MetricCard
+              label="Monthly Sales"
+              value={`$${Number(summary?.monthly?.totalSales ?? 0).toFixed(2)}`}
+              sub={`${summary?.monthly?.totalOrders ?? 0} orders this month`}
+              accent="#f59e0b"
+              t={t}
+              icon={<div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "rgba(245,158,11,0.2)" }}>
+                <BarChart3 className="h-5 w-5" style={{ color: "#f59e0b" }} />
+              </div>}
+            />
+          </div>
+
+          {/* ── CHARTS ROW ───────────────────────────── */}
+          {/*
+            monthlySales[] → { month: "YYYY-MM", totalSales, totalOrders }
+            topProducts[]  → { productName, totalQty, totalAmount }
+          */}
+          <div className="grid grid-cols-5 gap-4">
+
+            {/* Sales Area Chart */}
+            <div className="col-span-3 rounded-xl p-4" style={{ background: t.cardBg, border: `1px solid ${t.cardBorder}`, boxShadow: t.cardShadow }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold" style={{ color: t.textPrimary }}>Sales Overview (Last 12 Months)</h2>
+              </div>
+              <ResponsiveContainer width="100%" height={220}>
+                {monthlySales.length > 0 ? (
+                  <AreaChart data={monthlySales} margin={{ top: 4, right: 4, bottom: 0, left: -10 }}>
+                    <defs>
+                      <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0}  />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke={t.gridColor} strokeDasharray="3 3" vertical={false} />
+                    {/* month = "YYYY-MM" from backend */}
+                    <XAxis dataKey="month" tick={{ fill: t.tickColor, fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: t.tickColor, fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
+                    <Tooltip content={<ChartTooltip t={t} />} />
+                    <Area type="monotone" dataKey="totalSales" stroke="#3b82f6" strokeWidth={2.5}
+                      fill="url(#salesGrad)" dot={{ r: 4, fill: "#3b82f6", strokeWidth: 2, stroke: t.cardBg }}
+                      activeDot={{ r: 5 }} name="Sales ($)" />
+                  </AreaChart>
+                ) : (
+                  <Empty label="No monthly sales data" t={t} />
+                )}
+              </ResponsiveContainer>
+            </div>
+
+            {/* Top Products Bar Chart */}
+            <div className="col-span-2 rounded-xl p-4" style={{ background: t.cardBg, border: `1px solid ${t.cardBorder}`, boxShadow: t.cardShadow }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold" style={{ color: t.textPrimary }}>Top Selling Products</h2>
+              </div>
+              <ResponsiveContainer width="100%" height={220}>
+                {topProducts.length > 0 ? (
+                  <BarChart data={topProducts.slice(0, 5)} margin={{ top: 16, right: 4, bottom: 0, left: -20 }}>
+                    <CartesianGrid stroke={t.gridColor} strokeDasharray="3 3" vertical={false} />
+                    {/* productName from OrderDetail GROUP BY */}
+                    <XAxis dataKey="productName" tick={{ fill: t.tickColor, fontSize: 9 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: t.tickColor, fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<ChartTooltip t={t} />} />
+                    <Bar dataKey="totalQty" name="Qty Sold" radius={[4,4,0,0]}
+                      label={{ position: "top", fontSize: 10, fill: t.tickColor }}>
+                      {topProducts.slice(0, 5).map((_: any, i: number) => (
+                        <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                ) : (
+                  <Empty label="No product data" t={t} />
+                )}
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* ── BOTTOM ROW ───────────────────────────── */}
+          <div className="grid grid-cols-4 gap-4">
+
+            {/* Sales by Category Pie */}
+            {/*
+              categoryData[] → { category, categoryName, totalSales, totalOrders }
+              Using `category` field for labels (both fields are identical from backend)
+            */}
+            <div className="rounded-xl p-4" style={{ background: t.cardBg, border: `1px solid ${t.cardBorder}`, boxShadow: t.cardShadow }}>
+              <h2 className="text-sm font-semibold mb-3" style={{ color: t.textPrimary }}>Sales by Category</h2>
+              {categoryData.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <PieChart>
+                      <Pie data={categoryData} dataKey="totalSales" nameKey="category"
+                        cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2}>
+                        {categoryData.map((_: any, i: number) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="transparent" />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ background: t.tooltipBg, border: `1px solid ${t.tooltipBorder}`, borderRadius: 8, fontSize: 11, color: t.tooltipText }}
+                        formatter={(v: any) => [`$${Number(v).toFixed(2)}`, "Sales"]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Compute total for % */}
+                  {(() => {
+                    const total = categoryData.reduce((s: number, c: any) => s + (c.totalSales || 0), 0);
+                    return (
+                      <div className="space-y-1.5 mt-1">
+                        {categoryData.map((c: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-2 h-2 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                              <span style={{ color: t.textSecondary }}>{c.category}</span>
+                            </div>
+                            <span style={{ color: t.textMuted }}>
+                              {total > 0 ? `${Math.round((c.totalSales / total) * 100)}%` : "0%"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-40">
+                  <p className="text-xs" style={{ color: t.textMuted }}>No category data</p>
+                </div>
+              )}
+            </div>
+
+            {/* Monthly Target */}
+            {/*
+              Calculated from summary.monthly.totalSales vs MONTHLY_TARGET constant
+            */}
+            <div className="rounded-xl p-4 flex flex-col items-center justify-center"
+              style={{ background: t.cardBg, border: `1px solid ${t.cardBorder}`, boxShadow: t.cardShadow }}>
+              <h2 className="text-sm font-semibold mb-4 self-start" style={{ color: t.textPrimary }}>Monthly Target</h2>
+              <TargetRing pct={targetPct} color="#3b82f6" dark={dark} />
+              <p className="text-xs mt-3" style={{ color: t.textMuted }}>
+                ${monthlyActual.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${MONTHLY_TARGET.toLocaleString()}
+              </p>
+              <p className="text-xs mt-2 text-center" style={{ color: t.textSecondary }}>
+                {targetPct >= 100 ? "🎉 Target reached!" : targetPct >= 75 ? "🎉 Almost there!" : targetPct >= 50 ? "💪 Halfway there!" : "📈 Keep pushing!"}
+              </p>
+            </div>
+
+            {/* Recent Transactions */}
+            {/*
+              dailySales.data → Order[] from sequelize include orderDetails
+              Fields: id, total, discount, createdAt (from Orders table)
+              No `customer` field — Orders has no customer name in this schema
+            */}
+            <div className="rounded-xl p-4" style={{ background: t.cardBg, border: `1px solid ${t.cardBorder}`, boxShadow: t.cardShadow }}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold" style={{ color: t.textPrimary }}>Recent Transactions</h2>
+                <button className="text-xs" style={{ color: "#3b82f6" }}>View All</button>
+              </div>
+              {dailySales?.data?.length ? (
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${t.tableBorder}` }}>
+                      {["Order #", "Items", "Total", "Time"].map(h => (
+                        <th key={h} className="pb-2 text-left font-medium" style={{ color: t.textMuted }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailySales.data.slice(0, 5).map((tx: any, i: number) => (
+                      <tr key={i} style={{ borderBottom: `1px solid ${t.tableBorder}` }}>
+                        {/* id from Orders table */}
+                        <td className="py-2" style={{ color: t.textMuted }}>#{tx.id}</td>
+                        {/* orderDetails is included via Sequelize association */}
+                        <td className="py-2" style={{ color: t.textSecondary }}>
+                          {tx.orderDetails?.length ?? 0} item{tx.orderDetails?.length !== 1 ? "s" : ""}
+                        </td>
+                        {/* total from Orders.total */}
+                        <td className="py-2 font-semibold" style={{ color: t.textPrimary }}>
+                          ${Number(tx.total ?? 0).toFixed(2)}
+                        </td>
+                        {/* createdAt from Orders.createdAt */}
+                        <td className="py-2" style={{ color: t.textMuted }}>{fmtTime(tx.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-xs text-center mt-6" style={{ color: t.textMuted }}>No transactions today</p>
+              )}
+            </div>
+
+            {/* Low Stock Alert */}
+            {/*
+              lowStock[] → from summary.lowStock
+              Fields: id, name, qty, price  (Product model)
+            */}
+            <div className="rounded-xl p-4" style={{ background: t.cardBg, border: `1px solid ${t.cardBorder}`, boxShadow: t.cardShadow }}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold" style={{ color: t.textPrimary }}>Low Stock Alert</h2>
+                <button className="text-xs" style={{ color: "#3b82f6" }}>View All</button>
+              </div>
+              {lowStock.length > 0 ? (
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${t.tableBorder}` }}>
+                      {["Product", "Qty", "Price", "Status"].map(h => (
+                        <th key={h} className="pb-2 text-left font-medium" style={{ color: t.textMuted }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lowStock.map((p: any, i: number) => (
+                      <tr key={p.id ?? i} style={{ borderBottom: `1px solid ${t.tableBorder}` }}>
+                        {/* name, qty, price from Product model */}
+                        <td className="py-2" style={{ color: t.textSecondary }}>{p.name}</td>
+                        <td className="py-2 font-semibold" style={{ color: t.textPrimary }}>{p.qty}</td>
+                        <td className="py-2" style={{ color: t.textMuted }}>${Number(p.price ?? 0).toFixed(2)}</td>
+                        <td className="py-2">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold"
+                            style={{ background: p.qty === 0 ? "rgba(239,68,68,0.15)" : t.badgeRed,
+                                     color: t.badgeRedText }}>
+                            {p.qty === 0 ? "Out of Stock" : "Low Stock"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-xs text-center mt-6" style={{ color: t.textMuted }}> All items well stocked</p>
+              )}
+            </div>
+
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// ─── MetricCard ───────────────────────────────────────────────
+function MetricCard({ label, value, sub, accent, t, icon }: any) {
+  return (
+    <div className="rounded-xl p-4 relative overflow-hidden"
+      style={{ background: t.cardBg, border: `1px solid ${t.cardBorder}`, boxShadow: t.cardShadow }}>
+      <div className="flex items-start justify-between mb-3">
+        {icon}
+        <div className="text-right">
+          <p className="text-[11px] font-medium mb-0.5" style={{ color: t.textSecondary }}>{label}</p>
+          <p className="text-xl font-bold" style={{ color: t.textPrimary }}>{value}</p>
         </div>
-      )}
+      </div>
+      <p className="text-[11px]" style={{ color: t.textMuted }}>{sub}</p>
     </div>
   );
 }
 
-// ── MetricCard ─────────────────────────────────────────────
-interface Theme {
-  cardBg: string;
-  cardBorder: string;
-  textPrimary: string;
-  textMuted: string;
-  [key: string]: string;
-}
-
-interface MetricCardProps {
-  label: string;
-  value: string | number;
-  sub: string;
-  icon: React.ReactNode;
-  accent: string;
-  t: Theme;
-}
-
-function MetricCard({ label, value, sub, icon, accent, t }: MetricCardProps) {
+// ─── Target Ring ─────────────────────────────────────────────
+function TargetRing({ pct, color, dark }: { pct: number; color: string; dark: boolean }) {
+  const r = 54, cx = 70, cy = 70;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
   return (
-    <div
-      className="rounded-2xl p-4 relative overflow-hidden transition-colors duration-300"
-      style={{
-        background: t.cardBg,
-        border: `1px solid ${t.cardBorder}`,
-        borderTopColor: accent,
-        borderTopWidth: 2,
-      }}
-    >
-      <div
-        className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-10 blur-xl pointer-events-none"
-        style={{ background: accent, transform: "translate(30%,-30%)" }}
-      />
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
-        style={{ background: `${accent}20`, color: accent }}
-      >
-        {icon}
+    <div className="relative flex items-center justify-center">
+      <svg width={140} height={140} viewBox="0 0 140 140">
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={dark ? "#1e2435" : "#e5e7eb"} strokeWidth={12} />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={12}
+          strokeDasharray={circ} strokeDashoffset={offset}
+          strokeLinecap="round" transform={`rotate(-90 ${cx} ${cy})`} />
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-2xl font-bold" style={{ color }}>{pct}%</span>
       </div>
-      <p
-        className="text-[10px] uppercase tracking-widest font-semibold mb-1"
-        style={{ color: t.textMuted }}
-      >
-        {label}
-      </p>
-      <p className="text-xl font-bold" style={{ color: t.textPrimary }}>
-        {value}
-      </p>
-      <p className="text-[11px] mt-0.5" style={{ color: t.textMuted }}>
-        {sub}
-      </p>
-    </div>
-  );
-}
-
-// ── DailyStat ──────────────────────────────────────────────
-interface DailyStatProps {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  color: string;
-  bg: string;
-}
-
-function DailyStat({ label, value, icon, color, bg }: DailyStatProps) {
-  return (
-    <div
-      className="rounded-xl p-3 flex items-center gap-3"
-      style={{ background: bg }}
-    >
-      <div style={{ color }}>{icon}</div>
-      <div>
-        <p className="text-[10px] uppercase tracking-widest font-semibold text-slate-500">
-          {label}
-        </p>
-        <p className="text-base font-bold mt-0.5" style={{ color }}>
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ── ChartCard ──────────────────────────────────────────────
-interface ChartCardProps {
-  title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-  t: Theme;
-}
-
-function ChartCard({ title, icon, children, t }: ChartCardProps) {
-  return (
-    <div
-      className="rounded-2xl p-5 transition-colors duration-300"
-      style={{ background: t.cardBg, border: `1px solid ${t.cardBorder}` }}
-    >
-      <div className="flex items-center gap-2 mb-4">
-        {icon}
-        <h2
-          className="text-xs font-semibold uppercase tracking-widest"
-          style={{ color: t.textSecondary }}
-        >
-          {title}
-        </h2>
-      </div>
-      {children}
     </div>
   );
 }

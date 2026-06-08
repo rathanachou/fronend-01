@@ -16,17 +16,17 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useAuthRegister } from "../../hooks/useAuth";
-import type { RegisterPayload } from "../../service/auth.service";
 import { isAdmin } from "../../utils/auth";
+import type { RegisterPayload } from "@/service/auth.service";
 
 interface RegisterFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
+  firstName:       string;
+  lastName:        string;
+  email:           string;
+  password:        string;
   confirmPassword: string;
-  gender: string;
-  role: string;
+  gender:          string;
+  role:            string;
 }
 
 interface Props {
@@ -36,18 +36,16 @@ interface Props {
 const RegisterForm = ({ onSuccess }: Props) => {
   const [showPassword, setShowPassword] = useState(false);
 
-  // ── Check current user role ─────────────────────────────
   const currentUserIsAdmin = isAdmin();
 
   const [form, setForm] = useState<RegisterFormData>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
+    firstName:       "",
+    lastName:        "",
+    email:           "",
+    password:        "",
     confirmPassword: "",
-    gender: "",
-    // FIX: cashier cannot change role — always locked to "cashier"
-    role: currentUserIsAdmin ? "cashier" : "cashier",
+    gender:          "",
+    role:            "cashier", // default always cashier
   });
 
   const [errors, setErrors] = useState<
@@ -56,36 +54,55 @@ const RegisterForm = ({ onSuccess }: Props) => {
 
   const { mutate: registerMutate, isPending } = useAuthRegister();
 
+  // ── Validation ───────────────────────────────────────────────
   const validate = (): boolean => {
     const newErrors: Partial<
       Record<keyof RegisterFormData, { message: string }>
     > = {};
-    if (!form.firstName.trim()) newErrors.firstName = { message: "First name is required" };
-    if (!form.lastName.trim()) newErrors.lastName = { message: "Last name is required" };
-    if (!form.email.trim()) newErrors.email = { message: "Email is required" };
-    else if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = { message: "Invalid email format" };
-    if (!form.password) newErrors.password = { message: "Password is required" };
-    else if (form.password.length < 6) newErrors.password = { message: "Min. 6 characters" };
-    if (!form.confirmPassword) newErrors.confirmPassword = { message: "Please confirm password" };
-    else if (form.password !== form.confirmPassword) newErrors.confirmPassword = { message: "Passwords do not match" };
-    if (!form.gender) newErrors.gender = { message: "Gender is required" };
+
+    if (!form.firstName.trim())
+      newErrors.firstName = { message: "First name is required" };
+
+    if (!form.lastName.trim())
+      newErrors.lastName = { message: "Last name is required" };
+
+    if (!form.email.trim())
+      newErrors.email = { message: "Email is required" };
+    else if (!/\S+@\S+\.\S+/.test(form.email))
+      newErrors.email = { message: "Invalid email format" };
+
+    if (!form.password)
+      newErrors.password = { message: "Password is required" };
+    else if (form.password.length < 6)
+      newErrors.password = { message: "Min. 6 characters" };
+
+    if (!form.confirmPassword)
+      newErrors.confirmPassword = { message: "Please confirm password" };
+    else if (form.password !== form.confirmPassword)
+      newErrors.confirmPassword = { message: "Passwords do not match" };
+
+    if (!form.gender)
+      newErrors.gender = { message: "Gender is required" };
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // ── Handle Input Change ──────────────────────────────────────
   const handleChange = (name: string, value: string) => {
     setForm((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
+  // ── Handle Submit ────────────────────────────────────────────
   const handleSubmit = () => {
     if (!validate()) return;
 
     const { confirmPassword, ...payload } = form;
 
-    // FIX: cashier always sends role="cashier" — cannot override
     const finalPayload: RegisterPayload = {
       ...payload,
+      // Admin can choose role, cashier is always locked to "cashier"
       role: currentUserIsAdmin ? payload.role : "cashier",
     };
 
@@ -93,13 +110,13 @@ const RegisterForm = ({ onSuccess }: Props) => {
       onSuccess: () => {
         toast.success("Account created successfully!");
         setForm({
-          firstName: "",
-          lastName: "",
-          email: "",
-          password: "",
+          firstName:       "",
+          lastName:        "",
+          email:           "",
+          password:        "",
           confirmPassword: "",
-          gender: "",
-          role: "cashier",
+          gender:          "",
+          role:            "cashier",
         });
         setErrors({});
         onSuccess?.();
@@ -112,11 +129,12 @@ const RegisterForm = ({ onSuccess }: Props) => {
     });
   };
 
+  // ── Render ───────────────────────────────────────────────────
   return (
     <div>
       <FieldGroup>
 
-        {/* ── Name Row ───────────────────────────────── */}
+        {/* Name Row */}
         <div className="grid grid-cols-2 gap-4">
           <Field data-invalid={!!errors.firstName}>
             <FieldLabel htmlFor="firstName">
@@ -126,7 +144,7 @@ const RegisterForm = ({ onSuccess }: Props) => {
               id="firstName"
               value={form.firstName}
               onChange={(e) => handleChange("firstName", e.target.value)}
-              placeholder="John"
+              placeholder="Rathana"
               autoComplete="off"
             />
             {errors.firstName && <FieldError errors={[errors.firstName]} />}
@@ -140,14 +158,14 @@ const RegisterForm = ({ onSuccess }: Props) => {
               id="lastName"
               value={form.lastName}
               onChange={(e) => handleChange("lastName", e.target.value)}
-              placeholder="Doe"
+              placeholder="Chou"
               autoComplete="off"
             />
             {errors.lastName && <FieldError errors={[errors.lastName]} />}
           </Field>
         </div>
 
-        {/* ── Email ──────────────────────────────────── */}
+        {/* Email */}
         <Field data-invalid={!!errors.email}>
           <FieldLabel htmlFor="reg-email">
             Email <span className="text-red-500">*</span>
@@ -157,13 +175,13 @@ const RegisterForm = ({ onSuccess }: Props) => {
             type="email"
             value={form.email}
             onChange={(e) => handleChange("email", e.target.value)}
-            placeholder="john@example.com"
+            placeholder="example@email.com"
             autoComplete="off"
           />
           {errors.email && <FieldError errors={[errors.email]} />}
         </Field>
 
-        {/* ── Password ───────────────────────────────── */}
+        {/* Password */}
         <Field data-invalid={!!errors.password}>
           <FieldLabel htmlFor="reg-password">
             Password <span className="text-red-500">*</span>
@@ -189,7 +207,7 @@ const RegisterForm = ({ onSuccess }: Props) => {
           {errors.password && <FieldError errors={[errors.password]} />}
         </Field>
 
-        {/* ── Confirm Password ───────────────────────── */}
+        {/* Confirm Password */}
         <Field data-invalid={!!errors.confirmPassword}>
           <FieldLabel htmlFor="reg-confirm">
             Confirm Password <span className="text-red-500">*</span>
@@ -207,8 +225,12 @@ const RegisterForm = ({ onSuccess }: Props) => {
           )}
         </Field>
 
-        {/* ── Gender + Role ──────────────────────────── */}
-        <div className={`grid gap-4 ${currentUserIsAdmin ? "grid-cols-2" : "grid-cols-1"}`}>
+        {/* Gender + Role */}
+        <div
+          className={`grid gap-4 ${
+            currentUserIsAdmin ? "grid-cols-2" : "grid-cols-1"
+          }`}
+        >
           <Field data-invalid={!!errors.gender}>
             <FieldLabel>
               Gender <span className="text-red-500">*</span>
@@ -229,6 +251,7 @@ const RegisterForm = ({ onSuccess }: Props) => {
             {errors.gender && <FieldError errors={[errors.gender]} />}
           </Field>
 
+          {/* Role — visible to admin only */}
           {currentUserIsAdmin && (
             <Field>
               <FieldLabel>Role</FieldLabel>
@@ -247,6 +270,8 @@ const RegisterForm = ({ onSuccess }: Props) => {
             </Field>
           )}
         </div>
+
+        {/* Admin warning when assigning admin role */}
         {currentUserIsAdmin && form.role === "admin" && (
           <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-600 dark:text-yellow-400 flex gap-2">
             <span>⚠️</span>
@@ -257,7 +282,7 @@ const RegisterForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
-        {/* ── Submit ─────────────────────────────────── */}
+        {/* Submit */}
         <Button
           type="button"
           disabled={isPending}

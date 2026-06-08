@@ -54,7 +54,6 @@ export const uploadProductImage = async (id: number, file: File) => {
   });
 };
 
-// FIX: Now accepts both imageId and productId to match the correct backend route
 export const deleteProductImage = async (imageId: number, productId: number) => {
   return await api.delete(`/api/v1/products/${productId}/images/${imageId}`);
 };
@@ -92,10 +91,10 @@ const downloadBlob = (blob: Blob, filename: string) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
+// Print all active products as barcode PDF
 export const printAllBarcodes = async () => {
   const res = await api.get("/api/v1/products/barcodes/print", {
     responseType: "blob",
@@ -104,12 +103,24 @@ export const printAllBarcodes = async () => {
   downloadBlob(blob, "product-labels.pdf");
 };
 
+// Print a single product barcode PDF
 export const printSingleBarcode = async (id: number) => {
   const res = await api.get(`/api/v1/products/${id}/barcode/print`, {
     responseType: "blob",
   });
   const blob = new Blob([res as any], { type: "application/pdf" });
   downloadBlob(blob, `label-${id}.pdf`);
+};
+
+// Print selected product IDs as barcode PDF
+export const printSelectedBarcodes = async (ids: number[]) => {
+  const res = await api.post(
+    "/api/v1/products/barcodes/print/selected",
+    { ids },
+    { responseType: "blob" }
+  );
+  const blob = new Blob([res as any], { type: "application/pdf" });
+  downloadBlob(blob, "selected-labels.pdf");
 };
 
 export const getBarcodeImageUrl = (id: number): string => {

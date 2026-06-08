@@ -14,7 +14,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-
 export const useProduct = (
   search?: string,
   page?: number,
@@ -27,11 +26,7 @@ export const useProduct = (
   });
 };
 
-
-export const useOutOfStockProducts = (
-  search?: string,
-  categoryId?: number
-) => {
+export const useOutOfStockProducts = (search?: string, categoryId?: number) => {
   return useQuery({
     queryKey: ["products-out-of-stock", search, categoryId],
     queryFn: () => fetchOutOfStockProducts(search, categoryId),
@@ -47,6 +42,7 @@ export const useCreateProduct = () => {
       toast.success("Product created successfully");
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-out-of-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["products-low-stock"] }); 
     },
     onError: (error: Error) => {
       toast.error("Failed to create product");
@@ -64,6 +60,7 @@ export const useUpdateProduct = () => {
       toast.success("Product updated successfully");
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-out-of-stock"] });
+      queryClient.invalidateQueries({ queryKey: ["products-low-stock"] }); 
     },
     onError: (error: Error) => {
       toast.error("Failed to update product");
@@ -88,7 +85,6 @@ export const useUploadProductImage = () => {
   });
 };
 
-// FIX: Now requires productId so the correct backend route is called
 export const useDeleteProductImage = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -116,6 +112,7 @@ export const useDeleteProduct = () => {
       toast.success("Product deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["products"], refetchType: "all" });
       queryClient.invalidateQueries({ queryKey: ["products-out-of-stock"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["products-low-stock"], refetchType: "all" }); 
     },
     onError: (error: Error) => {
       toast.error("Failed to delete product");
@@ -135,10 +132,9 @@ export const useProductStock = (id: number) => {
 export const useStockIn = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, qty }: { id: number; qty: number }) =>
-      stockIn(id, qty),
+    mutationFn: ({ id, qty }: { id: number; qty: number }) => stockIn(id, qty),
     onSuccess: (_, variables) => {
-      toast.success("Stock added successfully ✅");
+      toast.success("Stock added successfully");
       queryClient.invalidateQueries({ queryKey: ["product-stock", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-out-of-stock"] });
@@ -153,17 +149,16 @@ export const useStockIn = () => {
 export const useStockOut = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, qty }: { id: number; qty: number }) =>
-      stockOut(id, qty),
+    mutationFn: ({ id, qty }: { id: number; qty: number }) => stockOut(id, qty),
     onSuccess: (_, variables) => {
-      toast.success("Stock deducted successfully ✅");
+      toast.success("Stock deducted successfully");
       queryClient.invalidateQueries({ queryKey: ["product-stock", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products-out-of-stock"] });
       queryClient.invalidateQueries({ queryKey: ["products-low-stock"] });
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to deduct stock ❌");
+      toast.error(error?.response?.data?.message || "Failed to deduct stock");
     },
   });
 };

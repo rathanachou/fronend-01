@@ -1,14 +1,8 @@
-
 import axios from "axios";
 import { getAccessToken, removeAccessToken } from "../../utils/TokenStorage";
 
-
-const apiUrl = import.meta.env.VITE_API_URL;
-
-console.log("API URL:", apiUrl);
-
 const api = axios.create({
-  baseURL: apiUrl,
+  baseURL: import.meta.env.VITE_API_URL as string,
   headers: {
     "Content-Type": "application/json",
   },
@@ -26,9 +20,7 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => {
-    return response.data;
-  },
+  (response) => response.data,
   (error) => {
     const status = error.response?.status;
 
@@ -37,19 +29,12 @@ api.interceptors.response.use(
       window.location.href = "/login";
     }
 
-    if (status === 403) {
-      console.error("❌ Forbidden: No permission");
-    }
-
-    if (status === 404) {
-      console.error("❌ Not Found");
-    }
-
-    if (status === 500) {
-      console.error("❌ Server Error");
-    }
+    if (status === 403) console.error("❌ Forbidden: No permission");
+    if (status === 404) console.error("❌ Not Found");
+    if (status === 500) console.error("❌ Server Error");
 
     return Promise.reject(error);
   }
 );
+
 export default api;

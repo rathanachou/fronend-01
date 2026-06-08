@@ -1,72 +1,67 @@
+import api from "@/service/libs/axios";
 
-import api from "./libs/axios";
-import { getAccessToken } from "../utils/TokenStorage";
+// ─── TYPES ────────────────────────────────────────────────
 
-const BASE_URL = import.meta.env.VITE_API_URL;
-
-// ─── Types ────────────────────────────────────────────────
-export interface OrderPayload {
-  discount: number;
-  items: {
-    productId: number;
-    qty: number;
-  }[];
+export interface OrderItem {
+  productId: number;
+  qty: number;
 }
 
-// ─── Create Order ─────────────────────────────────────────
-export const createOrder = async (request: OrderPayload) => {
-  return await api.post("/api/v1/orders", request); 
-};
+export interface OrderPayload {
+  discount: number;
+  items: OrderItem[];
+}
 
-// ─── Get All Orders ───────────────────────────────────────
-export const getOrders = async (params?: {
+export interface OrderResponse {
+  id: number;
+  total: number;
+  discount: number;
+  status: string;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
+export interface GetOrdersParams {
   page?: number;
   limit?: number;
   search?: string;
-}) => {
-  return await api.get("/api/v1/orders", { params });
-};
+}
 
-// ─── Get Order by ID ──────────────────────────────────────
-export const getOrderById = async (id: number) => {
-  return await api.get(`/api/v1/orders/${id}`);
-};
+// ─── SERVICES ─────────────────────────────────────────────
 
-// ─── Generate Order Doc (.docx) ───────────────────────────
-export const generateOrderDoc = async (id: number): Promise<void> => {
-  const res = await api.get(
-    `${BASE_URL}/api/v1/orders/${id}/generate-doc`,
-    {
-      responseType: "blob",
-      headers: {
-        Authorization: `Bearer ${getAccessToken()}`,
-      },
-    }
-  );
+/** POST /api/v1/orders — creates order (pending, no stock deduction) */
+export const createOrder = async (
+  payload: OrderPayload
+): Promise<{ success: boolean; data: OrderResponse }> =>
+  api.post("/api/v1/orders", payload);
 
-  const blob = new Blob([res.data], {
-    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `order-${id}.docx`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(link.href);
-};
+/** GET /api/v1/orders */
+export const getOrders = async (
+  params?: GetOrdersParams
+): Promise<{ success: boolean; data: OrderResponse[] }> =>
+  api.get("/api/v1/orders", { params });
 
-// ─── Complete Order ───────────────────────────────────────
-export const completeOrder = async (id: number): Promise<void> => {
-  await api.patch(`/api/v1/orders/${id}/complete`);
-};
+/** GET /api/v1/orders/:id */
+export const getOrderById = async (
+  id: number
+): Promise<{ success: boolean; data: OrderResponse }> =>
+  api.get(`/api/v1/orders/${id}`);
 
-// service/orders.service.ts
+/** PATCH /api/v1/orders/:id/cancel — cancels order, restores stock if completed */
 export const cancelOrder = async (
   id: number,
   reason?: string
-) => {
-  return await api.patch(`/api/v1/orders/${id}/cancel`, {
-    reason: reason || "Customer cancelled",
-  });
-};
+): Promise<{ success: boolean }> =>
+  api.patch(`/api/v1/orders/${id}/cancel`, { reason });
+
+/** POST /api/v1/orders/:id/confirm — deducts stock, marks order completed */
+export const completeOrder = async (
+  id: number
+): Promise<{ success: boolean }> =>
+  api.post(`/api/v1/orders/${id}/confirm`);
+
+/** GET /api/v1/orders/:id/doc */
+export const generateOrderDoc = async (
+  id: number
+): Promise<{ success: boolean; data: Blob }> =>
+  api.get(`/api/v1/orders/${id}/doc`, { responseType: "blob" });

@@ -11,6 +11,7 @@ import ProductForm from "../components/Products/ProductForm";
 import { DataTable } from "../components/data-table";
 import { columns } from "../components/Products/columns";
 import StockManagement from "../components/StockManagement"; 
+
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ import {
   PaginationPrevious,
 } from "../components/ui/pagination";
 import { useProduct, useDeleteProduct } from "../hooks/useProduct";
+import PrintBarcodesButton from "@/components/Products/Printbarcodesbutton";
 
 const Product = () => {
   const navigate = useNavigate();
@@ -45,7 +47,6 @@ const Product = () => {
   const [limit, setLimit] = useState(10);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | undefined>(undefined);
 
- 
   const [stockOpen, setStockOpen] = useState(false);
   const [selectedStockProduct, setSelectedStockProduct] = useState<IProduct | undefined>(undefined);
 
@@ -123,9 +124,14 @@ const Product = () => {
           />
           <Button onClick={handleSearch}>Search</Button>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <CirclePlus className="mr-2 h-4 w-4" /> Create
-        </Button>
+
+        {/* ─── Right actions ───────────────────────────── */}
+        <div className="flex items-center gap-2">
+          <PrintBarcodesButton products={productData?.data ?? []} />  
+          <Button onClick={() => setOpen(true)}>
+            <CirclePlus className="mr-2 h-4 w-4" /> Create
+          </Button>
+        </div>
       </div>
 
       {/* ─── Product Form Dialog ──────────────────────────── */}
@@ -135,7 +141,6 @@ const Product = () => {
         product={selectedProduct}
       />
 
-  
       <Dialog open={stockOpen} onOpenChange={(val) => {
         setStockOpen(val);
         if (!val) setSelectedStockProduct(undefined);
@@ -143,7 +148,7 @@ const Product = () => {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-               Stock — {selectedStockProduct?.name}
+              Stock — {selectedStockProduct?.name}
             </DialogTitle>
           </DialogHeader>
           {selectedStockProduct && (
@@ -155,7 +160,6 @@ const Product = () => {
         </DialogContent>
       </Dialog>
 
-   
       <DataTable
         columns={columns({ onEdit, onDelete, onManageStock })} 
         data={productData?.data ?? []}
@@ -180,7 +184,7 @@ const Product = () => {
                 <SelectItem value="5">5</SelectItem>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="50">50</SelectItem>  
                 <SelectItem value="100">100</SelectItem>
               </SelectGroup>
             </SelectContent>

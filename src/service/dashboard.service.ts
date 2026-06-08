@@ -1,5 +1,5 @@
 import api from "./libs/axios";
-
+import type { IDailySales } from "../types/dashboard";
 
 export const getDashboardSummary = async () => {
   return await api.get("/api/v1/dashboard/summary");
@@ -19,7 +19,9 @@ export const getSalesByCategory = async () => {
   return await api.get("/api/v1/dashboard/sales/by-category");
 };
 
-export const getDailySales = async (date?: string) => {
+
+
+export const getDailySales = async (date?: string): Promise<IDailySales> => {
   return await api.get("/api/v1/dashboard/sales/daily", {
     params: { date },
   });

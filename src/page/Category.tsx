@@ -68,7 +68,7 @@ const Category = () => {
     <div>
         <div>
 
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-4 mb-6">
           <Input
             className="w-[200px]"
             placeholder="Search product..."
@@ -79,8 +79,9 @@ const Category = () => {
           <Button >Search</Button>
         </div>
         </div>
-      
-      <Button onClick={  () => setIsOpen(true)}>Create</Button>
+      <div className="flex gap-4 mb-4">
+        <Button onClick={  () => setIsOpen(true)}>Create</Button>
+      </div>
       <DataTable
         columns={columns({ onEdit: handleEdit , onDelete })}
         data={data?.data ?? []}

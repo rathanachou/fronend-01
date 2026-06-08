@@ -1,109 +1,92 @@
-import * as React from "react"
-import { ChevronRight, MoreHorizontal } from "lucide-react"
-import { Slot } from "radix-ui"
+import { useNavigate, useLocation } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 
-import { cn } from "@/lib/utils"
+// ─── Route label map — must match App.tsx routes ─────────────
+const ROUTE_LABELS: Record<string, string> = {
+  "/admin/pos":             "POS",
+  "/admin/dashboard":       "Dashboard",
+  "/admin/products":        "Products",
+  "/admin/categories":      "Categories",
+  "/admin/reports":         "Reports",
+  "/admin/reports/daily":   "Daily",
+  "/admin/reports/monthly": "Monthly",
+  "/admin/users":           "Users",
+};
 
-function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
-  return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />
-}
+export default function AppBreadcrumb() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const path     = location.pathname;
 
-function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
-  return (
-    <ol
-      data-slot="breadcrumb-list"
-      className={cn(
-        "text-muted-foreground flex flex-wrap items-center gap-1.5 text-sm break-words sm:gap-2.5",
-        className
-      )}
-      {...props}
-    />
-  )
-}
+  // Build cumulative path segments
+  // e.g. "/admin/reports/daily" → ["/admin", "/admin/reports", "/admin/reports/daily"]
+  const parts   = path.split("/").filter(Boolean);
+  const allCrumbs = parts.map((_, i) => {
+    const url = "/" + parts.slice(0, i + 1).join("/");
+    return { url, label: ROUTE_LABELS[url] ?? null };
+  });
 
-function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
-  return (
-    <li
-      data-slot="breadcrumb-item"
-      className={cn("inline-flex items-center gap-1.5", className)}
-      {...props}
-    />
-  )
-}
-
-function BreadcrumbLink({
-  asChild,
-  className,
-  ...props
-}: React.ComponentProps<"a"> & {
-  asChild?: boolean
-}) {
-  const Comp = asChild ? Slot.Root : "a"
+  // Only keep segments that have a known label (skip "/admin" prefix)
+  const crumbs = allCrumbs.filter((c) => c.label !== null);
 
   return (
-    <Comp
-      data-slot="breadcrumb-link"
-      className={cn("hover:text-foreground transition-colors", className)}
-      {...props}
-    />
-  )
-}
-
-function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
-  return (
-    <span
-      data-slot="breadcrumb-page"
-      role="link"
-      aria-disabled="true"
-      aria-current="page"
-      className={cn("text-foreground font-normal", className)}
-      {...props}
-    />
-  )
-}
-
-function BreadcrumbSeparator({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"li">) {
-  return (
-    <li
-      data-slot="breadcrumb-separator"
-      role="presentation"
-      aria-hidden="true"
-      className={cn("[&>svg]:size-3.5", className)}
-      {...props}
+    <nav
+      aria-label="breadcrumb"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        fontSize: 13,
+        fontFamily: "'Inter','Segoe UI',sans-serif",
+      }}
     >
-      {children ?? <ChevronRight />}
-    </li>
-  )
-}
+      {crumbs.map((crumb, i) => {
+        const isLast = i === crumbs.length - 1;
+        return (
+          <span
+            key={crumb.url}
+            style={{ display: "flex", alignItems: "center", gap: 4 }}
+          >
+            {/* Separator — skip before first item */}
+            {i > 0 && (
+              <ChevronRight
+                style={{ width: 13, height: 13, color: "#d1d5db" }}
+              />
+            )}
 
-function BreadcrumbEllipsis({
-  className,
-  ...props
-}: React.ComponentProps<"span">) {
-  return (
-    <span
-      data-slot="breadcrumb-ellipsis"
-      role="presentation"
-      aria-hidden="true"
-      className={cn("flex size-9 items-center justify-center", className)}
-      {...props}
-    >
-      <MoreHorizontal className="size-4" />
-      <span className="sr-only">More</span>
-    </span>
-  )
-}
-
-export {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-  BreadcrumbEllipsis,
+            {isLast ? (
+              // Current page — not clickable
+              <span style={{ color: "#111827", fontWeight: 600 }}>
+                {crumb.label}
+              </span>
+            ) : (
+              // Parent page — clickable
+              <button
+                onClick={() => navigate(crumb.url)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#6b7280",
+                  padding: "2px 4px",
+                  borderRadius: 4,
+                  fontWeight: 400,
+                  fontSize: 13,
+                  transition: "color 0.15s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = "#3b82f6")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "#6b7280")
+                }
+              >
+                {crumb.label}
+              </button>
+            )}
+          </span>
+        );
+      })}
+    </nav>
+  );
 }

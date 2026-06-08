@@ -1,46 +1,79 @@
-import { useOrders, useGenerateOrderDoc } from "@/hooks/useOrder";
-export default function Orders() {
-  const { data: orders, isLoading } = useOrders({ page: 1, limit: 10 });
-  const { mutate: generateDoc } = useGenerateOrderDoc();
+import { cancelOrder, completeOrder, createOrder, generateOrderDoc, getOrderById, getOrders, type GetOrdersParams, type OrderPayload, } from "@/service/orders.service";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
-  if (isLoading) return <p className="p-4">Loading...</p>;
+export const useCreateOrder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: OrderPayload) => createOrder(payload),
+    onSuccess: () => {
+      toast.success("Order created successfully! 🛒");
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });              
+      queryClient.invalidateQueries({ queryKey: ["products-out-of-stock"] }); 
+      queryClient.invalidateQueries({ queryKey: ["products-low-stock"] });    
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to create order ❌");
+      console.error(error);
+    },
+  });
+};
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">📋 Orders</h1>
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="p-4 text-left">Order Number</th>
-              <th className="p-4 text-left">Total</th>
-              <th className="p-4 text-left">Date</th>
-              <th className="p-4 text-left">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders?.data?.map((order: any) => (
-              <tr key={order.id} className="border-t hover:bg-gray-50">
-                <td className="p-4">{order.orderNumber}</td>
-                <td className="p-4 text-blue-600 font-semibold">
-                  ${Number(order.total).toFixed(2)}
-                </td>
-                <td className="p-4 text-gray-500">
-                  {new Date(order.createdAt).toLocaleDateString()}
-                </td>
-                <td className="p-4">
-                  <button
-                    onClick={() => generateDoc(order.id)}
-                    className="bg-indigo-600 text-white px-3 py-1 rounded text-xs hover:bg-indigo-700"
-                  >
-                    📄 Download Doc
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+export const useOrders = (params?: GetOrdersParams) =>
+  useQuery({
+    queryKey: ["orders", params],
+    queryFn: () => getOrders(params),
+  });
+
+export const useOrderById = (id: number) =>
+  useQuery({
+    queryKey: ["orders", id],
+    queryFn: () => getOrderById(id),
+    enabled: !!id,
+  });
+
+export const useGenerateOrderDoc = () =>
+  useMutation({
+    mutationFn: (id: number) => generateOrderDoc(id),
+    onSuccess: (data, id) => {
+      const url = window.URL.createObjectURL(data.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `order-${id}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Document downloaded! 📄");
+    },
+    onError: () => toast.error("Failed to generate document ❌"),
+  });
+
+export const useCancelOrder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason?: string }) => cancelOrder(id, reason),
+    onSuccess: () => {
+      toast.success("Order cancelled — Stock restored");
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });             
+      queryClient.invalidateQueries({ queryKey: ["products-out-of-stock"] }); 
+      queryClient.invalidateQueries({ queryKey: ["products-low-stock"] });   
+    },
+    onError: () => toast.error("Failed to cancel order ❌"),
+  });
+};
+
+export const useCompleteOrder = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => completeOrder(id),
+    onSuccess: () => {
+      toast.success("Order completed! ");
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });             
+      queryClient.invalidateQueries({ queryKey: ["products-out-of-stock"] }); 
+      queryClient.invalidateQueries({ queryKey: ["products-low-stock"] });    
+    },
+    onError: () => toast.error("Failed to complete order ❌"),
+  });
+};
